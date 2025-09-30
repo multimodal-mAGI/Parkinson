@@ -10,10 +10,6 @@ from datasets import load_dataset
 RAW_DIR = Path("data/raw").resolve()
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-HF_TOKEN = os.getenv("HF_TOKEN", None)
-OFFLINE = os.getenv("OFFLINE", "0") == "1"
-
-
 def http_download(url: str, dst: Path):
     """HTTP(S)로 파일 다운로드"""
     req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
