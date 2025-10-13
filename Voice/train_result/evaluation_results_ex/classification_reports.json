@@ -1,0 +1,191 @@
+{
+  "cnn_base": {
+    "Healthy Control": {
+      "precision": 0.8813559322033898,
+      "recall": 0.9811320754716981,
+      "f1-score": 0.9285714285714286,
+      "support": 53.0
+    },
+    "Parkinson Disease": {
+      "precision": 0.9824561403508771,
+      "recall": 0.8888888888888888,
+      "f1-score": 0.9333333333333333,
+      "support": 63.0
+    },
+    "accuracy": 0.9310344827586207,
+    "macro avg": {
+      "precision": 0.9319060362771334,
+      "recall": 0.9350104821802935,
+      "f1-score": 0.930952380952381,
+      "support": 116.0
+    },
+    "weighted avg": {
+      "precision": 0.9362638038696975,
+      "recall": 0.9310344827586207,
+      "f1-score": 0.9311576354679804,
+      "support": 116.0
+    }
+  },
+  "rnn_base": {
+    "Healthy Control": {
+      "precision": 0.9375,
+      "recall": 0.8490566037735849,
+      "f1-score": 0.8910891089108911,
+      "support": 53.0
+    },
+    "Parkinson Disease": {
+      "precision": 0.8823529411764706,
+      "recall": 0.9523809523809523,
+      "f1-score": 0.916030534351145,
+      "support": 63.0
+    },
+    "accuracy": 0.9051724137931034,
+    "macro avg": {
+      "precision": 0.9099264705882353,
+      "recall": 0.9007187780772686,
+      "f1-score": 0.9035598216310181,
+      "support": 116.0
+    },
+    "weighted avg": {
+      "precision": 0.9075494421906695,
+      "recall": 0.9051724137931034,
+      "f1-score": 0.9046348830724082,
+      "support": 116.0
+    }
+  },
+  "transformer_base": {
+    "Healthy Control": {
+      "precision": 0.9333333333333333,
+      "recall": 0.7924528301886793,
+      "f1-score": 0.8571428571428571,
+      "support": 53.0
+    },
+    "Parkinson Disease": {
+      "precision": 0.8450704225352113,
+      "recall": 0.9523809523809523,
+      "f1-score": 0.8955223880597015,
+      "support": 63.0
+    },
+    "accuracy": 0.8793103448275862,
+    "macro avg": {
+      "precision": 0.8892018779342723,
+      "recall": 0.8724168912848158,
+      "f1-score": 0.8763326226012793,
+      "support": 116.0
+    },
+    "weighted avg": {
+      "precision": 0.8853974421240084,
+      "recall": 0.8793103448275862,
+      "f1-score": 0.8779869127270054,
+      "support": 116.0
+    }
+  },
+  "hybrid_base": {
+    "Healthy Control": {
+      "precision": 0.8620689655172413,
+      "recall": 0.9433962264150944,
+      "f1-score": 0.9009009009009009,
+      "support": 53.0
+    },
+    "Parkinson Disease": {
+      "precision": 0.9482758620689655,
+      "recall": 0.873015873015873,
+      "f1-score": 0.9090909090909091,
+      "support": 63.0
+    },
+    "accuracy": 0.9051724137931034,
+    "macro avg": {
+      "precision": 0.9051724137931034,
+      "recall": 0.9082060497154837,
+      "f1-score": 0.904995904995905,
+      "support": 116.0
+    },
+    "weighted avg": {
+      "precision": 0.9088882282996432,
+      "recall": 0.9051724137931034,
+      "f1-score": 0.9053489225903019,
+      "support": 116.0
+    }
+  },
+  "xgb_meta": {
+    "Healthy Control": {
+      "precision": 0.9361702127659575,
+      "recall": 0.8301886792452831,
+      "f1-score": 0.88,
+      "support": 53.0
+    },
+    "Parkinson Disease": {
+      "precision": 0.8695652173913043,
+      "recall": 0.9523809523809523,
+      "f1-score": 0.9090909090909091,
+      "support": 63.0
+    },
+    "accuracy": 0.896551724137931,
+    "macro avg": {
+      "precision": 0.9028677150786308,
+      "recall": 0.8912848158131177,
+      "f1-score": 0.8945454545454545,
+      "support": 116.0
+    },
+    "weighted avg": {
+      "precision": 0.8999968101055854,
+      "recall": 0.896551724137931,
+      "f1-score": 0.8957993730407523,
+      "support": 116.0
+    }
+  },
+  "rf_meta": {
+    "Healthy Control": {
+      "precision": 0.9375,
+      "recall": 0.8490566037735849,
+      "f1-score": 0.8910891089108911,
+      "support": 53.0
+    },
+    "Parkinson Disease": {
+      "precision": 0.8823529411764706,
+      "recall": 0.9523809523809523,
+      "f1-score": 0.916030534351145,
+      "support": 63.0
+    },
+    "accuracy": 0.9051724137931034,
+    "macro avg": {
+      "precision": 0.9099264705882353,
+      "recall": 0.9007187780772686,
+      "f1-score": 0.9035598216310181,
+      "support": 116.0
+    },
+    "weighted avg": {
+      "precision": 0.9075494421906695,
+      "recall": 0.9051724137931034,
+      "f1-score": 0.9046348830724082,
+      "support": 116.0
+    }
+  },
+  "gb_meta": {
+    "Healthy Control": {
+      "precision": 0.9375,
+      "recall": 0.8490566037735849,
+      "f1-score": 0.8910891089108911,
+      "support": 53.0
+    },
+    "Parkinson Disease": {
+      "precision": 0.8823529411764706,
+      "recall": 0.9523809523809523,
+      "f1-score": 0.916030534351145,
+      "support": 63.0
+    },
+    "accuracy": 0.9051724137931034,
+    "macro avg": {
+      "precision": 0.9099264705882353,
+      "recall": 0.9007187780772686,
+      "f1-score": 0.9035598216310181,
+      "support": 116.0
+    },
+    "weighted avg": {
+      "precision": 0.9075494421906695,
+      "recall": 0.9051724137931034,
+      "f1-score": 0.9046348830724082,
+      "support": 116.0
+    }
+  }
+}

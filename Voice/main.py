@@ -15,8 +15,8 @@ from utils import load_audio_data, cross_validation_ensemble
 
 
 # 학습용 데이터 경로
-HEALTHY_PATH = r"Voice\data\EN\healthy"
-PARKINSON_PATH = r"Voice\data\EN\parkinson"
+HEALTHY_PATH = r".\data\EN\healthy"
+PARKINSON_PATH = r".\data\EN\parkinson"
 
 # 예측용 데이터 경로 (디렉토리, 파일 리스트, 단일 파일 모두 가능)
 PREDICT_DATA_PATH = r"data\testdata_KO\healthy"
@@ -24,14 +24,14 @@ PREDICT_DATA_PATH = r"data\testdata_KO\healthy"
 # PREDICT_DATA_PATH = "./audio.wav"  # 단일 파일
 
 # 모델 저장 경로
-MODEL_SAVE_DIR = "./models/finetune"
+MODEL_SAVE_DIR = r"models\finetune\ensemble_models_KO"
 
 # 훈련 파라미터
 EPOCHS = 20
 BATCH_SIZE = 8
 
 # 실행 모드: 'train' 또는 'predict'
-MODE = 'train'
+MODE = 'predict'
 
 
 
@@ -103,7 +103,7 @@ def train():
     try:
         evaluator = ModelEvaluator()
         results = evaluator.evaluate_models(ensemble, test_paths, test_labels,
-                                           save_plots=True, plots_dir="./evaluation_results")
+                                           save_plots=True, plots_dir=".train_result/evaluation_results")
         print("평가 완료!")
     except Exception as e:
         print(f"평가 오류: {e}")
@@ -173,33 +173,177 @@ def predict():
     # 예측 수행
     print("\n=== 예측 수행 ===")
     try:
-        predictions, _ = ensemble.predict(valid_paths)
+        predictions, base_preds = ensemble.predict(valid_paths)
 
         print("\n" + "="*60)
         print("예측 결과")
         print("="*60)
 
+        # 통계 집계를 위한 변수
+        base_stats = {name: {'HC': 0, 'PD': 0} for name in base_preds.keys()}
+        meta_stats = {name: {'HC': 0, 'PD': 0} for name in predictions.keys()}
+
+        # CSV 데이터 준비
+        csv_data = []
+        csv_header = ['파일명']
+
+        # 헤더 구성
+        for base_name in base_preds.keys():
+            csv_header.extend([f'{base_name.upper()}_예측', f'{base_name.upper()}_HC확률', f'{base_name.upper()}_PD확률'])
+        for meta_name in predictions.keys():
+            csv_header.extend([f'{meta_name.upper()}_예측', f'{meta_name.upper()}_HC확률', f'{meta_name.upper()}_PD확률'])
+
+        csv_data.append(csv_header)
+
+        # 각 파일별 예측 결과
         for i, path in enumerate(valid_paths):
             filename = os.path.basename(path)
             print(f"\n[{i+1}/{len(valid_paths)}] {filename}")
             print("-" * 60)
 
+            row_data = [filename]
+
+            # 베이스 모델 예측
+            print("\n  [베이스 모델 예측]")
+            for base_name, base_pred in base_preds.items():
+                hc_prob = base_pred[i][0]
+                pd_prob = base_pred[i][1]
+                pred_label = "PD" if pd_prob > hc_prob else "HC"
+
+                # 통계 집계
+                if pred_label == "PD":
+                    base_stats[base_name]['PD'] += 1
+                else:
+                    base_stats[base_name]['HC'] += 1
+
+                print(f"    {base_name.upper()}: {pred_label} (HC={hc_prob:.1%}, PD={pd_prob:.1%})")
+                row_data.extend([pred_label, f"{hc_prob:.4f}", f"{pd_prob:.4f}"])
+
+            # 메타 러너 예측 (최종)
+            print("\n  [최종 예측 - 메타 러너]")
             for meta_name, result in predictions.items():
-                pred_label = "Parkinson Disease" if result['predictions'][i] == 1 else "Healthy Control"
+                pred_label = "PD" if result['predictions'][i] == 1 else "HC"
                 pd_prob = result['probabilities'][i][1]
                 hc_prob = result['probabilities'][i][0]
                 confidence = max(pd_prob, hc_prob)
 
-                print(f"  {meta_name.upper()}: {pred_label} (신뢰도: {confidence:.1%})")
-                print(f"    HC={hc_prob:.1%}, PD={pd_prob:.1%}")
+                # 통계 집계
+                if pred_label == "PD":
+                    meta_stats[meta_name]['PD'] += 1
+                else:
+                    meta_stats[meta_name]['HC'] += 1
+
+                print(f"    {meta_name.upper()}: {pred_label} (신뢰도: {confidence:.1%}, HC={hc_prob:.1%}, PD={pd_prob:.1%})")
+                row_data.extend([pred_label, f"{hc_prob:.4f}", f"{pd_prob:.4f}"])
+
+            csv_data.append(row_data)
 
         print("\n" + "="*60)
 
+        # 통계 출력
+        print("\n=== 예측 통계 ===")
+        print(f"총 파일 수: {len(valid_paths)}개\n")
+
+        print("[베이스 모델 통계]")
+        for base_name, stats in base_stats.items():
+            print(f"  {base_name.upper()}: HC {stats['HC']}개 ({stats['HC']/len(valid_paths)*100:.1f}%), "
+                  f"PD {stats['PD']}개 ({stats['PD']/len(valid_paths)*100:.1f}%)")
+
+        print("\n[메타 러너 통계 (최종)]")
+        for meta_name, stats in meta_stats.items():
+            print(f"  {meta_name.upper()}: HC {stats['HC']}개 ({stats['HC']/len(valid_paths)*100:.1f}%), "
+                  f"PD {stats['PD']}개 ({stats['PD']/len(valid_paths)*100:.1f}%)")
+
+        # CSV 파일 저장
+        save_results_csv(csv_data)
+
+        # TXT 파일 저장
+        save_results_txt(valid_paths, base_preds, predictions, base_stats, meta_stats)
+
     except Exception as e:
         print(f"예측 오류: {e}")
+        import traceback
+        traceback.print_exc()
         return
 
     print("\n예측 완료!")
+
+
+def save_results_csv(csv_data):
+    """예측 결과를 CSV로 저장"""
+    import csv
+    from datetime import datetime
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_filename = f"prediction_results_{timestamp}.csv"
+
+    try:
+        with open(csv_filename, 'w', newline='', encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            writer.writerows(csv_data)
+        print(f"\n✓ CSV 저장 완료: {csv_filename}")
+    except Exception as e:
+        print(f"\n✗ CSV 저장 실패: {e}")
+
+
+def save_results_txt(valid_paths, base_preds, predictions, base_stats, meta_stats):
+    """예측 결과를 TXT로 저장"""
+    from datetime import datetime
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    txt_filename = f"prediction_results_{timestamp}.txt"
+
+    try:
+        with open(txt_filename, 'w', encoding='utf-8') as f:
+            f.write("="*60 + "\n")
+            f.write("Parkinson Disease 예측 결과\n")
+            f.write(f"생성 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("="*60 + "\n\n")
+
+            # 개별 파일 결과
+            for i, path in enumerate(valid_paths):
+                filename = os.path.basename(path)
+                f.write(f"[{i+1}/{len(valid_paths)}] {filename}\n")
+                f.write("-" * 60 + "\n")
+
+                # 베이스 모델
+                f.write("\n[베이스 모델 예측]\n")
+                for base_name, base_pred in base_preds.items():
+                    hc_prob = base_pred[i][0]
+                    pd_prob = base_pred[i][1]
+                    pred_label = "PD" if pd_prob > hc_prob else "HC"
+                    f.write(f"  {base_name.upper()}: {pred_label} (HC={hc_prob:.1%}, PD={pd_prob:.1%})\n")
+
+                # 메타 러너
+                f.write("\n[최종 예측 - 메타 러너]\n")
+                for meta_name, result in predictions.items():
+                    pred_label = "PD" if result['predictions'][i] == 1 else "HC"
+                    pd_prob = result['probabilities'][i][1]
+                    hc_prob = result['probabilities'][i][0]
+                    confidence = max(pd_prob, hc_prob)
+                    f.write(f"  {meta_name.upper()}: {pred_label} (신뢰도: {confidence:.1%}, HC={hc_prob:.1%}, PD={pd_prob:.1%})\n")
+
+                f.write("\n")
+
+            # 통계
+            f.write("="*60 + "\n")
+            f.write("예측 통계\n")
+            f.write("="*60 + "\n\n")
+            f.write(f"총 파일 수: {len(valid_paths)}개\n\n")
+
+            f.write("[베이스 모델 통계]\n")
+            for base_name, stats in base_stats.items():
+                f.write(f"  {base_name.upper()}: HC {stats['HC']}개 ({stats['HC']/len(valid_paths)*100:.1f}%), "
+                       f"PD {stats['PD']}개 ({stats['PD']/len(valid_paths)*100:.1f}%)\n")
+
+            f.write("\n[메타 러너 통계 (최종)]\n")
+            for meta_name, stats in meta_stats.items():
+                f.write(f"  {meta_name.upper()}: HC {stats['HC']}개 ({stats['HC']/len(valid_paths)*100:.1f}%), "
+                       f"PD {stats['PD']}개 ({stats['PD']/len(valid_paths)*100:.1f}%)\n")
+
+        print(f"✓ TXT 저장 완료: {txt_filename}")
+    except Exception as e:
+        print(f"✗ TXT 저장 실패: {e}")
 
 
 if __name__ == "__main__":

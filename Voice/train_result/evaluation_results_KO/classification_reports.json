@@ -1,0 +1,191 @@
+{
+  "cnn_base": {
+    "Healthy Control": {
+      "precision": 0.9230769230769231,
+      "recall": 1.0,
+      "f1-score": 0.96,
+      "support": 12.0
+    },
+    "Parkinson Disease": {
+      "precision": 1.0,
+      "recall": 0.9166666666666666,
+      "f1-score": 0.9565217391304348,
+      "support": 12.0
+    },
+    "accuracy": 0.9583333333333334,
+    "macro avg": {
+      "precision": 0.9615384615384616,
+      "recall": 0.9583333333333333,
+      "f1-score": 0.9582608695652174,
+      "support": 24.0
+    },
+    "weighted avg": {
+      "precision": 0.9615384615384616,
+      "recall": 0.9583333333333334,
+      "f1-score": 0.9582608695652174,
+      "support": 24.0
+    }
+  },
+  "rnn_base": {
+    "Healthy Control": {
+      "precision": 1.0,
+      "recall": 0.8333333333333334,
+      "f1-score": 0.9090909090909091,
+      "support": 12.0
+    },
+    "Parkinson Disease": {
+      "precision": 0.8571428571428571,
+      "recall": 1.0,
+      "f1-score": 0.9230769230769231,
+      "support": 12.0
+    },
+    "accuracy": 0.9166666666666666,
+    "macro avg": {
+      "precision": 0.9285714285714286,
+      "recall": 0.9166666666666667,
+      "f1-score": 0.916083916083916,
+      "support": 24.0
+    },
+    "weighted avg": {
+      "precision": 0.9285714285714285,
+      "recall": 0.9166666666666666,
+      "f1-score": 0.9160839160839161,
+      "support": 24.0
+    }
+  },
+  "transformer_base": {
+    "Healthy Control": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 12.0
+    },
+    "Parkinson Disease": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 12.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 24.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 24.0
+    }
+  },
+  "hybrid_base": {
+    "Healthy Control": {
+      "precision": 1.0,
+      "recall": 0.9166666666666666,
+      "f1-score": 0.9565217391304348,
+      "support": 12.0
+    },
+    "Parkinson Disease": {
+      "precision": 0.9230769230769231,
+      "recall": 1.0,
+      "f1-score": 0.96,
+      "support": 12.0
+    },
+    "accuracy": 0.9583333333333334,
+    "macro avg": {
+      "precision": 0.9615384615384616,
+      "recall": 0.9583333333333333,
+      "f1-score": 0.9582608695652174,
+      "support": 24.0
+    },
+    "weighted avg": {
+      "precision": 0.9615384615384616,
+      "recall": 0.9583333333333334,
+      "f1-score": 0.9582608695652174,
+      "support": 24.0
+    }
+  },
+  "xgb_meta": {
+    "Healthy Control": {
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1-score": 0.8571428571428571,
+      "support": 12.0
+    },
+    "Parkinson Disease": {
+      "precision": 0.8,
+      "recall": 1.0,
+      "f1-score": 0.8888888888888888,
+      "support": 12.0
+    },
+    "accuracy": 0.875,
+    "macro avg": {
+      "precision": 0.9,
+      "recall": 0.875,
+      "f1-score": 0.873015873015873,
+      "support": 24.0
+    },
+    "weighted avg": {
+      "precision": 0.9,
+      "recall": 0.875,
+      "f1-score": 0.8730158730158729,
+      "support": 24.0
+    }
+  },
+  "rf_meta": {
+    "Healthy Control": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 12.0
+    },
+    "Parkinson Disease": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 12.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 24.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 24.0
+    }
+  },
+  "gb_meta": {
+    "Healthy Control": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 12.0
+    },
+    "Parkinson Disease": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 12.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 24.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 24.0
+    }
+  }
+}
