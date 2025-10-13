@@ -194,48 +194,139 @@ def run_cross_validation(X, y, load_existing):
         print("기존 모델을 로드했으므로 교차 검증을 건너뜁니다.")
 
 
-def main():
-    """메인 실행 함수"""
-    # 데이터 경로 설정
-    healthy_path = r"D:\Desktop\ksy\AGI\AST_M\data\KO\healthy"
-    parkinson_path = r"D:\Desktop\ksy\AGI\AST_M\data\KO\parkinson"
-    
-    # 데이터 로드
-    X, y = load_audio_data(healthy_path, parkinson_path)
-    
+def prediction_only_mode(model_save_dir, audio_paths=None):
+    """Prediction 전용 모드"""
+    print("\n=== Prediction-Only Mode ===")
+
     # 장치 설정
     device = setup_device()
-    
+
     # 앙상블 모델 생성
     ensemble = StackingEnsemble(device=device)
-    
+
+    # 저장된 모델 로드
+    if not os.path.exists(model_save_dir):
+        print(f"Error: 모델 디렉토리 {model_save_dir}가 존재하지 않습니다.")
+        print("먼저 모델을 훈련하고 저장해야 합니다.")
+        return None
+
+    try:
+        ensemble.load_models(model_save_dir)
+        print("모델 로드 완료!")
+    except Exception as e:
+        print(f"모델 로드 실패: {e}")
+        return None
+
+    # 예측할 오디오 파일 경로 입력
+    if audio_paths is None:
+        print("\n예측할 오디오 파일 경로를 입력하세요 (쉼표로 구분):")
+        print("예: path/to/audio1.wav, path/to/audio2.wav")
+        user_input = input(">>> ").strip()
+
+        if not user_input:
+            print("오디오 파일 경로가 입력되지 않았습니다.")
+            return None
+
+        audio_paths = [path.strip() for path in user_input.split(',')]
+
+    # 파일 존재 확인
+    valid_paths = []
+    for path in audio_paths:
+        if os.path.exists(path):
+            valid_paths.append(path)
+        else:
+            print(f"Warning: 파일을 찾을 수 없습니다: {path}")
+
+    if not valid_paths:
+        print("유효한 오디오 파일이 없습니다.")
+        return None
+
+    print(f"\n{len(valid_paths)}개 파일 예측 중...")
+
+    try:
+        predictions, base_preds = ensemble.predict(valid_paths)
+
+        print("\n=== Prediction Results ===")
+        for i, path in enumerate(valid_paths):
+            filename = os.path.basename(path)
+            print(f"\n[{i+1}] File: {filename}")
+
+            for meta_name, result in predictions.items():
+                pred_label = "Parkinson Disease" if result['predictions'][i] == 1 else "Healthy Control"
+                pd_prob = result['probabilities'][i][1]
+                hc_prob = result['probabilities'][i][0]
+                confidence = max(pd_prob, hc_prob)
+
+                print(f"  {meta_name.upper()}:")
+                print(f"    Prediction: {pred_label}")
+                print(f"    Confidence: {confidence:.1%}")
+                print(f"    Probabilities: HC={hc_prob:.1%}, PD={pd_prob:.1%}")
+            print("-" * 60)
+
+        return predictions
+
+    except Exception as e:
+        print(f"예측 중 오류 발생: {e}")
+        return None
+
+
+def main():
+    """메인 실행 함수"""
+    print("=== Parkinson's Disease Voice Classification System ===\n")
+    print("실행 모드를 선택하세요:")
+    print("1. 전체 실행 (훈련/평가/예측)")
+    print("2. Prediction만 수행 (기존 모델 사용)")
+
+    mode = input("\n모드 선택 (1 or 2, 기본값: 1): ").strip()
+
+    # 데이터 및 모델 경로 설정
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    healthy_path = os.path.join(current_dir, "data", "testdata_KO", "healthy")
+    parkinson_path = os.path.join(current_dir, "data", "testdata_KO", "parkinson")
+    model_save_dir = os.path.join(current_dir, "models", "finetune")
+
+    if mode == '2':
+        # Prediction 전용 모드
+        prediction_only_mode(model_save_dir)
+        return
+
+    # 전체 실행 모드 (기본)
+    print("\n=== Full Pipeline Mode ===")
+
+    # 데이터 로드
+    X, y = load_audio_data(healthy_path, parkinson_path)
+
+    # 장치 설정
+    device = setup_device()
+
+    # 앙상블 모델 생성
+    ensemble = StackingEnsemble(device=device)
+
     # 모델 훈련 또는 로드
-    model_save_dir = r"D:\Desktop\ksy\AGI\Ensemble_M\ensemble_models_EN"
     ensemble, test_paths, test_labels, load_existing = load_or_train_models(
         ensemble, X, y, model_save_dir
     )
-    
+
     if ensemble is None:
         print("모델 초기화에 실패했습니다.")
         return
-    
+
     # 성능 평가
     results = evaluate_model_performance(ensemble, test_paths, test_labels)
-    
+
     # 예측 예시
     demonstrate_prediction(ensemble, test_paths, test_labels)
-    
+
     # 교차 검증
     run_cross_validation(X, y, load_existing)
-    
+
     print("\n=== Program Completed Successfully! ===")
     print("Summary:")
     print("• Models have been trained and saved for future use")
     print("• Comprehensive evaluation metrics and visualizations generated")
     print("• Ready for deployment or further analysis")
     print("\nNext time you run this script:")
-    print("• Saved models will be automatically detected and loaded")
-    print("• Skip training time and jump straight to evaluation/prediction")
+    print("• Choose mode 2 for quick predictions with saved models")
     print("• All analysis files are preserved for reference")
 
 
