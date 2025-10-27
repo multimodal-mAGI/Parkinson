@@ -27,8 +27,8 @@ PREDICT_DATA_PATH = r"data\testdata_KO\healthy"
 MODEL_SAVE_DIR = r"models\finetune\ensemble_models_KO"
 
 # 훈련 파라미터
-EPOCHS = 20
-BATCH_SIZE = 8
+EPOCHS = 200
+BATCH_SIZE = 16
 
 # 실행 모드: 'train' 또는 'predict'
 MODE = 'predict'
