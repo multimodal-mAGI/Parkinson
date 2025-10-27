@@ -5,7 +5,13 @@
 ## 프로젝트 구조
 
 ```
-Ensemble_M_Refactored/
+Voice/
+├── data/                       # 데이터 디렉토리
+│   └── EN/                    # 영어 데이터셋
+│       ├── healthy/           # 건강한 사람 음성 파일
+│       ├── parkinson/         # 파킨슨 환자 음성 파일
+│       ├── HC_a/              # 건강한 사람 원본 데이터
+│       └── PD_a/              # 파킨슨 환자 원본 데이터
 ├── models/                     # 모델 정의
 │   ├── __init__.py
 │   └── base_models.py         # CNN, RNN, Transformer, Hybrid 모델
@@ -29,7 +35,13 @@ Ensemble_M_Refactored/
 │   ├── __init__.py
 │   ├── cross_validation.py    # 교차 검증
 │   └── data_loader.py         # 데이터 로딩
-├── main.py                     # 메인 실행 파일
+├── cnn/                        # CNN 단일 모델 (독립 실행)
+│   └── (CNN 단독 실행 파일)
+├── train_result/               # 훈련 결과 저장 디렉토리
+│   ├── (저장된 모델 파일)
+│   ├── (시각화 결과)
+│   └── (평가 메트릭)
+├── main.py                     # 메인 실행 파일 (앙상블)
 ├── requirements.txt            # 의존성 패키지
 └── README.md                   # 프로젝트 설명
 ```
