@@ -24,14 +24,14 @@ PREDICT_DATA_PATH = r"data\testdata_KO\healthy"
 # PREDICT_DATA_PATH = "./audio.wav"  # 단일 파일
 
 # 모델 저장 경로
-MODEL_SAVE_DIR = r"models\finetune\ensemble_models_KO"
+MODEL_SAVE_DIR = r"models\finetune\ensemble_models_EN_200"
 
 # 훈련 파라미터
 EPOCHS = 200
 BATCH_SIZE = 16
 
 # 실행 모드: 'train' 또는 'predict'
-MODE = 'predict'
+MODE = 'train'
 
 
 
@@ -78,20 +78,28 @@ def train():
     # 모델 생성
     ensemble = StackingEnsemble(device=device)
 
-    # 데이터 분할
+    # 데이터 분할: train 0.7, val 0.1, test 0.2
     print("\n=== 데이터 분할 ===")
-    train_paths, test_paths, train_labels, test_labels = train_test_split(
+    train_val_paths, test_paths, train_val_labels, test_labels = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
+    train_paths, val_paths, train_labels, val_labels = train_test_split(
+        train_val_paths, train_val_labels, test_size=0.125, random_state=42, stratify=train_val_labels  # 0.1/0.8 = 0.125
+    )
+
     print(f"훈련: {len(train_paths)}개 (HC: {np.sum(train_labels == 0)}, PD: {np.sum(train_labels == 1)})")
+    print(f"검증: {len(val_paths)}개 (HC: {np.sum(val_labels == 0)}, PD: {np.sum(val_labels == 1)})")
     print(f"테스트: {len(test_paths)}개 (HC: {np.sum(test_labels == 0)}, PD: {np.sum(test_labels == 1)})")
 
-    # 모델 훈련
+    # 모델 훈련 (Early Stopping 포함)
     print(f"\n=== 모델 훈련 (Epochs: {EPOCHS}, Batch: {BATCH_SIZE}) ===")
     try:
-        base_predictions = ensemble.train_base_models(train_paths, train_labels,
-                                                     epochs=EPOCHS, batch_size=BATCH_SIZE)
+        base_predictions = ensemble.train_base_models(
+            train_paths, train_labels,
+            val_paths=val_paths, val_labels=val_labels,
+            epochs=EPOCHS, batch_size=BATCH_SIZE
+        )
         ensemble.train_meta_learners(base_predictions, train_labels)
         print("\n훈련 완료!")
     except Exception as e:

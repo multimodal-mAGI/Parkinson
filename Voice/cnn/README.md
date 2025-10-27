@@ -24,22 +24,24 @@ ResNet-50 기반 CNN 모델에 강화된 전처리를 적용한 독립 실행 �
 - Grayscale Mel Spectrogram 입력 (64x64)
 - 2-class 분류 (HC vs PD)
 
+### 3. 학습 최적화
+- **Early Stopping**: Validation loss 기반 조기 종료 (patience=40*수정가능)
+- **데이터 분할**: Train 70% / Validation 10% / Test 20%
+- **학습 곡선 시각화**: Train/Validation loss 그래프 자동 저장
+
 ## 디렉터리 구조
 ```
 Voice/cnn/
-├── main.py              # 메인 실행 파일
-├── preprocessing.py     # 강화된 전처리
-├── model.py            # CNN 모델 정의
-├── README.md           # 이 파일
-└── cnn_model.pth       # 학습된 모델 (훈련 후 생성)
+├── main.py                          # 메인 실행 파일
+├── preprocessing.py                 # 강화된 전처리
+├── model.py                        # CNN 모델 정의
+├── README.md                       # 이 파일
+├── cnn_model.pth                   # 학습된 모델 (훈련 후 생성)
+├── cnn_training_curve_*.png        # 학습 곡선 그래프 (훈련 후 생성)
+├── cnn_prediction_*.csv            # 예측 결과 CSV (예측 후 생성)
+└── cnn_prediction_*.txt            # 예측 결과 TXT (예측 후 생성)
 ```
 
-## 설치
-
-### 필요한 패키지
-```bash
-pip install torch torchvision librosa numpy scipy pywt scikit-learn
-```
 
 ## 사용 방법
 
@@ -74,10 +76,12 @@ python main.py
 
 설정에서 `MODE = 'train'`으로 설정하고 실행하면:
 1. 오디오 데이터 로드
-2. 강화된 전처리 수행 (Wiener + Hamming + Wavelet)
-3. CNN 모델 훈련
-4. 성능 평가 (Accuracy, Precision, Recall, F1, AUC)
-5. 모델 저장 (`cnn_model.pth`)
+2. 데이터 분할 (Train 70% / Validation 10% / Test 20%)
+3. 강화된 전처리 수행 (Wiener + Hamming + Wavelet)
+4. CNN 모델 훈련 (Early Stopping 적용)
+5. 학습 곡선 그래프 저장 (`cnn_training_curve_*.png`)
+6. 성능 평가 (Accuracy, Precision, Recall, F1, AUC)
+7. 모델 저장 (`cnn_model.pth`)
 
 ### 3. 예측 실행
 ```bash

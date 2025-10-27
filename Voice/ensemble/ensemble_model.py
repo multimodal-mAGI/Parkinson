@@ -44,14 +44,16 @@ class StackingEnsemble:
         self.meta_trainer = MetaLearnerTrainer()
         self.predictor = None
     
-    def train_base_models(self, audio_paths, train_labels, epochs=30, batch_size=16):
+    def train_base_models(self, audio_paths, train_labels, val_paths=None, val_labels=None, epochs=30, batch_size=16):
         """베이스 모델들 훈련"""
         processed_data = self.preprocessor.load_and_preprocess_audio(audio_paths)
-        
+
         base_predictions, self.training_history = self.base_trainer.train_base_models(
-            self.base_models, processed_data, train_labels, epochs, batch_size
+            self.base_models, processed_data, train_labels,
+            val_paths=val_paths, val_labels=val_labels,
+            epochs=epochs, batch_size=batch_size
         )
-        
+
         return base_predictions
     
     def train_meta_learners(self, base_predictions, train_labels):

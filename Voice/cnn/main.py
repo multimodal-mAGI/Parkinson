@@ -7,11 +7,13 @@ import numpy as np
 import warnings
 import glob
 import csv
+import matplotlib.pyplot as plt
 from datetime import datetime
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 
 warnings.filterwarnings('ignore')
+plt.switch_backend('Agg')  # GUI 없이 그래프 저장
 
 # 현재 디렉터리를 패스에 추가
 try:
@@ -183,8 +185,12 @@ def train():
 
     # 학습
     print(f"\n=== 모델 훈련 (Epochs: {EPOCHS}, Batch: {BATCH_SIZE}) ===")
-    
+
     dataset_size = len(train_labels)
+
+    # 학습 곡선 기록용
+    train_losses = []
+    val_losses = []
 
     for epoch in range(EPOCHS):
         model.train() # 훈련 모드
@@ -240,6 +246,10 @@ def train():
         avg_val_loss = val_loss / (num_val_batches if num_val_batches > 0 else 1)
         # --------------------------------
 
+        # 학습 곡선 기록
+        train_losses.append(avg_loss)
+        val_losses.append(avg_val_loss)
+
         # [수정] 출력문 (Train Loss와 Val Loss 함께)
         if (epoch + 1) % 5 == 0:
             print(f"Epoch [{epoch+1}/{EPOCHS}], Train Loss: {avg_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
@@ -263,6 +273,9 @@ def train():
     # [수정] 훈련 완료 메시지
     print("\n훈련 완료!" if early_stopping_counter < PATIENCE else "\nEarly stopping으로 훈련 중단!")
 
+    # 학습 곡선 그래프 저장
+    print("\n=== 학습 곡선 저장 ===")
+    save_training_curves(train_losses, val_losses)
 
     # --- [수정] 평가 섹션 (기존 코드 오류 수정) ---
     print("\n=== 성능 평가 ===")
@@ -483,6 +496,39 @@ def predict():
         return
 
     print("\n예측 완료!")
+
+
+def save_training_curves(train_losses, val_losses):
+    """학습 곡선 그래프 저장"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    plot_filename = f"cnn_training_curve_{timestamp}.png"
+
+    try:
+        plt.figure(figsize=(10, 6))
+        epochs_range = range(1, len(train_losses) + 1)
+
+        plt.plot(epochs_range, train_losses, 'b-', label='Train Loss', linewidth=2)
+        plt.plot(epochs_range, val_losses, 'r-', label='Validation Loss', linewidth=2)
+
+        plt.xlabel('Epoch', fontsize=12)
+        plt.ylabel('Loss', fontsize=12)
+        plt.title('CNN Training and Validation Loss', fontsize=14, fontweight='bold')
+        plt.legend(fontsize=10)
+        plt.grid(True, alpha=0.3)
+
+        # 최소 validation loss 표시
+        min_val_loss = min(val_losses)
+        min_epoch = val_losses.index(min_val_loss) + 1
+        plt.axvline(x=min_epoch, color='g', linestyle='--', alpha=0.7, label=f'Best Model (Epoch {min_epoch})')
+        plt.legend(fontsize=10)
+
+        plt.tight_layout()
+        plt.savefig(plot_filename, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        print(f"학습 곡선 저장 완료: {plot_filename}")
+    except Exception as e:
+        print(f"학습 곡선 저장 실패: {e}")
 
 
 def save_results(csv_data, valid_paths, predictions, probs):
