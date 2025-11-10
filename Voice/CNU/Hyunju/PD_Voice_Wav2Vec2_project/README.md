@@ -12,10 +12,6 @@ PD_Voice_Wav2Vec2_project/
 ├── model/
 │ ├── wav2vec2_finetuning.ipynb # Wav2Vec2 파인튜닝 코드
 │ ├── parkinson_voice_classification_pipline.ipynb # 멀티모달 LLM 최종 파이프라인
-│ ├── best_multimodal_model.pth # 학습 완료된 Best 모델 가중치
-│ └── wav2vec2/
-│     └── wav2vec2-finetuned-pd-preprocess-weightdecay/
-│         └── checkpoint-1690 # Wav2Vec2 파인튜닝 결과 가중치
 │
 ├── preprocess/
 │ └── voice2mfcc_visual.ipynb # MFCC 시각화 코드
@@ -96,4 +92,31 @@ PD_Voice_Wav2Vec2_project/
 
 
 ### 1. 의존성 설치
+```bash
+pip install -r requirements.txt
+```
 
+### 2. 훈련용 오디오 데이터 전처리 진행 및 저장
+```bash
+python preprocess_audio.py  
+```
+
+### 3. 훈련 및 테스트 오디오 MFCC 시각화 진행 및 저장
+```bash
+jupyter notebook preprocess/voice2mfcc_visual.ipynb
+```
+
+### 4. 훈련용 오디오 데이터로 wav2vec2_finetuning 진행
+```bash
+jupyter notebook model/wav2vec2_finetuning.ipynb
+```
+* 파인튜닝 후 마지막 모델 가중치 저장된거 사용하여 llm 분류 파이프라인 코드 진행
+
+### 5. LLM 분류 파이프라인 코드 실행
+```bash
+jupyter notebook model/parkinson_voice_classification_pipline.ipynb
+```
+* 파인튜닝 한 가중치 모델 -> 오디오 데이터 임베딩 추출
+* ResNet18 모델 -> 훈련용 오디오 데이터를 MFCC 로 시각화 한 데이터 임베딩 추출
+* LLM 분류기 학습
+* 학습 중 최고 성능 모델로 외부 데이터(테스트 데이터)로 평가 진행행
