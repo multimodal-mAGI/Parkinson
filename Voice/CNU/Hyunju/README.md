@@ -1,28 +1,30 @@
 
 # 프로젝트 구조
-'''
+
+```bash
 PD_Voice_Wav2Vec2_project/
 ├── data/
-│ ├── vowel_data_preprocessed/ # 학습용 데이터 (지속모음 /pa/, /ta/ 포함)
-│ ├── vowel_data_preprocessed_img/ # 학습용 데이터 (MFCC 시각화)
-│ ├── italian_voice_pdhc_split_img/ # 외부 테스트용 데이터 (MFCC 시각화)
-│ └── italian_voice_pdhc_split/ # 외부 테스트용 데이터
+│   ├── vowel_data_preprocessed/             # 학습용 데이터 (지속모음 /pa/, /ta/ 포함)
+│   ├── vowel_data_preprocessed_img/         # 학습용 데이터 (MFCC 시각화)
+│   ├── italian_voice_pdhc_split_img/        # 외부 테스트용 데이터 (MFCC 시각화)
+│   └── italian_voice_pdhc_split/            # 외부 테스트용 데이터
 │
 ├── model/
-│ ├── wav2vec2_finetuning.ipynb # Wav2Vec2 파인튜닝 코드
-│ ├── parkinson_voice_classification_pipline.ipynb # 멀티모달 LLM 최종 파이프라인
-│ ├── best_multimodal_model.pth # 학습 완료된 Best 모델 가중치
-│ └── wav2vec2/
-│     └── wav2vec2-finetuned-pd-preprocess-weightdecay/
-│         └── checkpoint-1690 # Wav2Vec2 파인튜닝 결과 가중치
+│   ├── wav2vec2_finetuning.ipynb            # Wav2Vec2 파인튜닝 코드
+│   ├── parkinson_voice_classification_pipline.ipynb  # 멀티모달 LLM 최종 파이프라인
+│   ├── best_multimodal_model.pth            # 학습 완료된 Best 모델 가중치
+│   └── wav2vec2/
+│       └── wav2vec2-finetuned-pd-preprocess-weightdecay/
+│           └── checkpoint-1690              # Wav2Vec2 파인튜닝 결과 가중치
 │
 ├── preprocess/
-│ └── voice2mfcc_visual.ipynb # MFCC 시각화 코드
-│ └── preprocess_audio.py # 오디오 전처리 코드
+│   ├── voice2mfcc_visual.ipynb              # MFCC 시각화 코드
+│   └── preprocess_audio.py                  # 오디오 전처리 코드
 │
-├── requirements.txt                        # 실행 환경
-└── README.md                               # 프로젝트 설명 문서
-'''
+├── requirements.txt                         # 실행 환경
+└── README.md                                # 프로젝트 설명 문서
+
+
 # 주요 구성 및 경로 설정
 
 ### 1. 모델 파인튜닝 코드
@@ -94,3 +96,4 @@ PD_Voice_Wav2Vec2_project/
 
 
 ### 1. 의존성 설치
+
