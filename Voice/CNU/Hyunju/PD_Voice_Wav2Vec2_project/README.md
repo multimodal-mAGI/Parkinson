@@ -1,6 +1,7 @@
 
 # 프로젝트 구조
 
+'''bash 
 PD_Voice_Wav2Vec2_project/
 ├── data/
 │ ├── vowel_data_preprocessed/ # 학습용 데이터 (지속모음 /pa/, /ta/ 포함)
@@ -22,6 +23,7 @@ PD_Voice_Wav2Vec2_project/
 │
 ├── requirements.txt                        # 실행 환경
 └── README.md                               # 프로젝트 설명 문서
+'''
 
 # 주요 구성 및 경로 설정
 
@@ -91,5 +93,6 @@ PD_Voice_Wav2Vec2_project/
 
 
 # 설치 및 실행
+
 
 ### 1. 의존성 설치
