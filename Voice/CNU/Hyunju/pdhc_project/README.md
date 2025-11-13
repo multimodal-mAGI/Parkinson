@@ -104,3 +104,17 @@ python main_pipeline.py
 
 ```
 
+# 결과
+![RESULT](result.png)
+
+```
+AUC: 0.9337 | Accuracy: 0.9250
+              precision    recall  f1-score   support
+
+     Healthy     0.9885    0.8600    0.9198       100
+   Parkinson     0.8761    0.9900    0.9296       100
+
+    accuracy                         0.9250       200
+   macro avg     0.9323    0.9250    0.9247       200
+weighted avg     0.9323    0.9250    0.9247       200
+```
