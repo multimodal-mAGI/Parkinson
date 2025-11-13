@@ -65,25 +65,27 @@ pip install -r requirements.txt --extra-index-url https://download.pytorch.org/w
 - wav2vec2 모델을 자음,모음 등으로 파인튜닝한 모델이 다음과 같이 경로에 있어야함.
 - 파인튜닝 모델 다운로드 경로 : https://drive.google.com/drive/folders/1TfjRR6vzSN3uzzkdU9UoFFAphgj5oz3y?usp=drive_link
 
+```
 ├── model/
 │ ├── modules/
 │ ├── wav2vec2_finetuning.ipynb            # Wav2Vec2 파인튜닝 코드
 │ ├── main_pipline.ipynb                   # 멀티모달 LLM 최종 실행 코드 
 │ └── wav2vec2_finetuning_model/
 │      └── checkpoint-1690                 # Wav2Vec2 파인튜닝 결과 가중치
-
+```
 
 ##### 3.2) 데이터셋 설정
 
 - 학습용 데이터와 테스트용 데이터가 다음과 같이 경로에 있어야함.
 - 데이터셋 다운로드 경로 :  https://drive.google.com/drive/folders/1TfjRR6vzSN3uzzkdU9UoFFAphgj5oz3y?usp=drive_link
 
+```
 ├── data/
 │ ├── vowel_data_preprocessed/             # 학습용 데이터 (지속모음 /pa/, /ta/ 포함)
 │ ├── vowel_data_preprocessed_img/         # 학습용 데이터 (MFCC 시각화)
 │ ├── italian_voice_pdhc_split_img/        # 외부 테스트용 데이터 (MFCC 시각화)
 │ └── italian_voice_pdhc_split/            # 외부 테스트용 데이터
-
+```
 
 ##### 3.3) 코드 실행
 
@@ -101,3 +103,4 @@ python main_pipeline.py
 
 
 ```
+
