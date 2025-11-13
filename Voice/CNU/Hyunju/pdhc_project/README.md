@@ -1,6 +1,6 @@
 
 # 프로젝트 구조
-
+```
 pdhc_project/
 ├── data/
 │ ├── vowel_data_preprocessed/             # 학습용 데이터 (지속모음 /pa/, /ta/ 포함)
@@ -30,7 +30,7 @@ pdhc_project/
 ├── README.md                              # 프로젝트 설명 문서
 └── model_architecture.png                 # 모델 아키텍쳐 이미지
 
-
+```
 ---
 
 # 최종 아키텍처
@@ -98,5 +98,6 @@ python main_pipeline.py
 
 ``` bash
  & "C:\Users\user\anaconda3\envs\test22\python.exe" "C:\hyunju\pdhc_project\model\main_pipeline.py"
+
 
 ```
