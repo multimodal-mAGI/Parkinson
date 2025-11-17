@@ -33,6 +33,8 @@ class BaseHead(nn.Module, metaclass=ABCMeta):
             n_channel = 400
         elif joint_cfg == 'openpose_body25':   # 25*25=625
             n_channel = 625
+        elif joint_cfg == 'mediapipe':   # 25*25=625
+            n_channel = 625
         elif joint_cfg == 'custom_17':   # 17*17=289
             n_channel = 289
         self.csc_loss = Class_Specific_Contrastive_Loss(num_classes, n_channel)

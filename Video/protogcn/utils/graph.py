@@ -120,6 +120,26 @@ class Graph:
                 (11, 8), (12, 11), (13, 12), (14, 8), (15, 14), (16, 15)
             ]
             self.center = 0
+        
+        elif layout == 'mediapipe':
+            self.num_node = 25
+            self.center = 1  # 1: Mid-Shoulder (중심 노드)
+            self.inward = [
+                # 척추 (Spine)
+                (3, 2), (2, 1), (0, 1),
+                # 오른쪽 팔 (Right Arm)
+                (7, 6), (21, 6), (22, 6),
+                (6, 5), (5, 4), (4, 1),
+                # 왼쪽 팔 (Left Arm)
+                (11, 10), (23, 10), (24, 10),
+                (10, 9), (9, 8), (8, 1),
+                # 오른쪽 다리 (Right Leg)
+                (15, 14), (14, 13), (13, 12), (12, 0),
+                # 왼쪽 다리 (Left Leg)
+                (19, 18), (18, 17), (17, 16), (16, 0),
+                # 20번 노드 (Mid-Shoulder 복제본)
+                (20, 1)
+            ]
 
         elif layout == 'nturgb+d':
             self.num_node = 25
