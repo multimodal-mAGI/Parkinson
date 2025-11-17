@@ -5,7 +5,13 @@
 ## 프로젝트 구조
 
 ```
-Ensemble_M_Refactored/
+Voice/
+├── data/                       # 데이터 디렉토리
+│   └── EN/                    # 영어 데이터셋
+│       ├── healthy/           # 건강한 사람 음성 파일
+│       ├── parkinson/         # 파킨슨 환자 음성 파일
+│       ├── HC_a/              # 건강한 사람 원본 데이터
+│       └── PD_a/              # 파킨슨 환자 원본 데이터
 ├── models/                     # 모델 정의
 │   ├── __init__.py
 │   └── base_models.py         # CNN, RNN, Transformer, Hybrid 모델
@@ -29,7 +35,13 @@ Ensemble_M_Refactored/
 │   ├── __init__.py
 │   ├── cross_validation.py    # 교차 검증
 │   └── data_loader.py         # 데이터 로딩
-├── main.py                     # 메인 실행 파일
+├── cnn/                        # CNN 단일 모델 (독립 실행)
+│   └── (CNN 단독 실행 파일)
+├── train_result/               # 훈련 결과 저장 디렉토리
+│   ├── (저장된 모델 파일)
+│   ├── (시각화 결과)
+│   └── (평가 메트릭)
+├── main.py                     # 메인 실행 파일 (앙상블)
 ├── requirements.txt            # 의존성 패키지
 └── README.md                   # 프로젝트 설명
 ```
@@ -51,6 +63,8 @@ Ensemble_M_Refactored/
 - 오디오 전처리 (멜 스펙트로그램, MFCC 추출)
 - 베이스 모델 훈련 및 예측
 - 스태킹 앙상블 학습
+- **Early Stopping**: Validation 기반 조기 종료 (patience=40)
+- **데이터 분할**: Train 70% / Validation 10% / Test 20%
 - 성능 평가 및 시각화
 - 모델 저장/로드
 - 교차 검증
@@ -83,10 +97,11 @@ python main.py
 
 ### 기본 실행 흐름
 1. **데이터 로드**: 지정된 경로에서 오디오 파일 수집
-2. **모델 훈련**: 베이스 모델들과 메타 러너들 훈련
-3. **성능 평가**: 테스트 데이터에서 성능 평가 및 시각화
-4. **예측 데모**: 새로운 데이터에 대한 예측 예시
-5. **교차 검증**: 선택적으로 교차 검증 수행
+2. **데이터 분할**: Train/Validation/Test 세트 분할 (0.7/0.1/0.2)
+3. **모델 훈련**: 베이스 모델들과 메타 러너들 훈련 (Early Stopping 적용)
+4. **성능 평가**: 테스트 데이터에서 성능 평가 및 시각화
+5. **예측 데모**: 새로운 데이터에 대한 예측 예시
+6. **교차 검증**: 선택적으로 교차 검증 수행
 
 ### 모듈별 사용법
 
@@ -97,9 +112,13 @@ from ensemble import StackingEnsemble
 # 모델 초기화
 ensemble = StackingEnsemble(device='cuda')
 
-# 훈련
-base_predictions = ensemble.train_base_models(audio_paths, labels)
-ensemble.train_meta_learners(base_predictions, labels)
+# 훈련 (Early Stopping 포함)
+base_predictions = ensemble.train_base_models(
+    train_paths, train_labels,
+    val_paths=val_paths, val_labels=val_labels,
+    epochs=200, batch_size=16
+)
+ensemble.train_meta_learners(base_predictions, train_labels)
 
 # 예측
 predictions, base_preds = ensemble.predict(test_audio_paths)
@@ -115,11 +134,16 @@ from evaluation import ModelEvaluator
 # 전처리
 preprocessor = AudioPreprocessor()
 processed_data = preprocessor.load_and_preprocess_audio(audio_paths)
+val_processed = preprocessor.load_and_preprocess_audio(val_paths)
 
-# 훈련
+# 훈련 (Early Stopping 포함)
 trainer = BaseModelTrainer(device='cuda')
 base_models = {'cnn': CNNModel(), 'rnn': RNNModel()}
-predictions, history = trainer.train_base_models(base_models, processed_data, labels)
+predictions, history = trainer.train_base_models(
+    base_models, processed_data, train_labels,
+    val_paths=val_paths, val_labels=val_labels,
+    epochs=200, batch_size=16
+)
 
 # 평가
 evaluator = ModelEvaluator()

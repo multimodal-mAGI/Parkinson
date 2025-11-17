@@ -1,0 +1,14 @@
+*.pyc
+
+__pycache__/
+.env
+venv/
+env/
+
+*.mp4
+data/
+*npy
+HospitalData/
+hospitalwalkingdata/
+dataset/
+video_outputs_pose_only/

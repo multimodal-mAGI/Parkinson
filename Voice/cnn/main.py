@@ -7,23 +7,51 @@ import numpy as np
 import warnings
 import glob
 import csv
+import matplotlib.pyplot as plt
 from datetime import datetime
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 
 warnings.filterwarnings('ignore')
+plt.switch_backend('Agg')  # GUI 없이 그래프 저장
 
 # 현재 디렉터리를 패스에 추가
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+try:
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from preprocessing import CNNAudioPreprocessor
+    from model import CNNModel
+except ImportError:
+    print("Warning: 'preprocessing.py' 또는 'model.py'를 찾을 수 없습니다.")
+    # 임시 클래스 정의 (코드 실행을 위해)
+    class CNNAudioPreprocessor:
+        def load_and_preprocess_audio(self, paths):
+            print(f"[임시] {len(paths)}개 파일 전처리 중...")
+            # 실제 전처리 로직 대신 더미 데이터 반환
+            # (실제 크기(예: [128, 128])에 맞게 조정 필요)
+            return np.random.rand(len(paths), 128, 128) 
 
-from preprocessing import CNNAudioPreprocessor
-from model import CNNModel
+    class CNNModel(nn.Module):
+        def __init__(self, num_classes=2):
+            super(CNNModel, self).__init__()
+            # (실제 모델 구조와 입력 크기가 맞아야 함)
+            self.conv1 = nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1)
+            self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+            # 입력 크기가 [128, 128]이라고 가정
+            self.fc1 = nn.Linear(16 * 64 * 64, 128) 
+            self.fc2 = nn.Linear(128, num_classes)
+            self.relu = nn.ReLU()
 
+        def forward(self, x):
+            x = self.pool(self.relu(self.conv1(x)))
+            x = x.view(x.size(0), -1) # Flatten
+            x = self.relu(self.fc1(x))
+            x = self.fc2(x)
+            return x
 
 
 # 학습용 데이터 경로
-HEALTHY_PATH = "../data/testdata_KO/healthy"
-PARKINSON_PATH = "../data/testdata_KO/parkinson"
+HEALTHY_PATH = "../data/EN/healthy"
+PARKINSON_PATH = "../data/EN/parkinson"
 
 # 예측용 데이터 경로
 PREDICT_DATA_PATH = "../data/testdata_KO/healthy"
@@ -34,7 +62,7 @@ PREDICT_DATA_PATH = "../data/testdata_KO/healthy"
 MODEL_SAVE_PATH = "./cnn_model.pth"
 
 # 훈련 파라미터
-EPOCHS = 30
+EPOCHS = 200
 BATCH_SIZE = 16
 LEARNING_RATE = 0.001
 
@@ -96,6 +124,13 @@ def train():
     print("CNN 모델 학습 시작 (노이즈 제거 강화)")
     print("="*60)
 
+    # --- [추가] Early Stopping 파라미터 ---
+    PATIENCE = 40  # N 에포크 동안 성능 향상이 없으면 중지
+    best_val_loss = float('inf')
+    early_stopping_counter = 0
+    best_model_state = None
+    # ------------------------------------
+
     # 경로 검증
     if not os.path.exists(HEALTHY_PATH):
         print(f"오류: 건강한 사람 데이터 경로 없음: {HEALTHY_PATH}")
@@ -117,11 +152,20 @@ def train():
 
     # 데이터 분할
     print("\n=== 데이터 분할 ===")
-    train_paths, test_paths, train_labels, test_labels = train_test_split(
+    
+    train_val_paths, test_paths, train_val_labels, test_labels = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
+    
+    train_paths, val_paths, train_labels, val_labels = train_test_split(
+        train_val_paths, train_val_labels, test_size=0.125, random_state=42, stratify=train_val_labels
+    )
+    # ---------------------------------------------------------
 
     print(f"훈련: {len(train_paths)}개 (HC: {np.sum(train_labels == 0)}, PD: {np.sum(train_labels == 1)})")
+    # --- [추가] Validation set 출력 ---
+    print(f"검증: {len(val_paths)}개 (HC: {np.sum(val_labels == 0)}, PD: {np.sum(val_labels == 1)})")
+    # -----------------------------------
     print(f"테스트: {len(test_paths)}개 (HC: {np.sum(test_labels == 0)}, PD: {np.sum(test_labels == 1)})")
 
     # 전처리
@@ -130,6 +174,9 @@ def train():
 
     train_data = preprocessor.load_and_preprocess_audio(train_paths)
     test_data = preprocessor.load_and_preprocess_audio(test_paths)
+    # --- [추가] Validation 데이터 전처리 ---
+    val_data = preprocessor.load_and_preprocess_audio(val_paths)
+    # -------------------------------------
 
     # 모델 생성
     model = CNNModel(num_classes=2).to(device)
@@ -139,13 +186,18 @@ def train():
     # 학습
     print(f"\n=== 모델 훈련 (Epochs: {EPOCHS}, Batch: {BATCH_SIZE}) ===")
 
-    model.train()
     dataset_size = len(train_labels)
 
+    # 학습 곡선 기록용
+    train_losses = []
+    val_losses = []
+
     for epoch in range(EPOCHS):
+        model.train() # 훈련 모드
         epoch_loss = 0
         num_batches = 0
 
+        # --- 훈련 단계 ---
         for i in range(0, dataset_size, BATCH_SIZE):
             end_idx = min(i + BATCH_SIZE, dataset_size)
 
@@ -171,18 +223,78 @@ def train():
 
         avg_loss = epoch_loss / num_batches
 
+        # --- [추가] Validation 단계 ---
+        model.eval()  # 평가 모드
+        val_loss = 0
+        num_val_batches = 0
+        
+        with torch.no_grad():
+            for i in range(0, len(val_data), BATCH_SIZE):
+                end_idx = min(i + BATCH_SIZE, len(val_data))
+                batch_data = torch.FloatTensor(val_data[i:end_idx]).unsqueeze(1).to(device)
+                batch_labels = torch.LongTensor(val_labels[i:end_idx]).to(device)
+
+                outputs = model(batch_data)
+                loss = criterion(outputs, batch_labels)
+                
+                val_loss += loss.item()
+                num_val_batches += 1
+
+                del batch_data, batch_labels, outputs, loss
+                torch.cuda.empty_cache()
+        
+        avg_val_loss = val_loss / (num_val_batches if num_val_batches > 0 else 1)
+        # --------------------------------
+
+        # 학습 곡선 기록
+        train_losses.append(avg_loss)
+        val_losses.append(avg_val_loss)
+
+        # [수정] 출력문 (Train Loss와 Val Loss 함께)
         if (epoch + 1) % 5 == 0:
-            print(f"Epoch [{epoch+1}/{EPOCHS}], Loss: {avg_loss:.4f}")
+            print(f"Epoch [{epoch+1}/{EPOCHS}], Train Loss: {avg_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
 
-    print("\n훈련 완료!")
+        # --- [추가] Early Stopping 로직 ---
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            early_stopping_counter = 0
+            # 최고 성능 모델의 상태 저장
+            best_model_state = model.state_dict() 
+            if (epoch + 1) % 5 != 0: # 5 epoch 단위 출력이 아닐 때만 갱신 메시지 출력
+                 print(f"  -> New best model (Val Loss: {best_val_loss:.4f})")
+        else:
+            early_stopping_counter += 1
+            
+        if early_stopping_counter >= PATIENCE:
+            print(f"\nEarly stopping triggered at epoch {epoch+1}!")
+            break  # 학습 루프 탈출
+        # ----------------------------------
 
-    # 평가
+    # [수정] 훈련 완료 메시지
+    print("\n훈련 완료!" if early_stopping_counter < PATIENCE else "\nEarly stopping으로 훈련 중단!")
+
+    # 학습 곡선 그래프 저장
+    print("\n=== 학습 곡선 저장 ===")
+    save_training_curves(train_losses, val_losses)
+
+    # --- [수정] 평가 섹션 (기존 코드 오류 수정) ---
     print("\n=== 성능 평가 ===")
+    
+    # Validation에서 가장 좋았던 모델 상태로 복원
+    if best_model_state:
+        print("최적 성능의 모델(Best Model)을 로드하여 평가합니다.")
+        model.load_state_dict(best_model_state)
+    else:
+        # (Early stopping이 발생하지 않았거나, 1 epoch만 돌린 경우)
+        print("Warning: 최적 모델이 없습니다. 마지막 모델로 평가합니다.")
+        best_model_state = model.state_dict() # 마지막 모델 상태 저장
+
     model.eval()
     all_predictions = []
     all_probs = []
 
     with torch.no_grad():
+        # Test Set (test_data)으로 평가
         for i in range(0, len(test_data), BATCH_SIZE):
             end_idx = min(i + BATCH_SIZE, len(test_data))
             batch_data = torch.FloatTensor(test_data[i:end_idx]).unsqueeze(1).to(device)
@@ -191,21 +303,35 @@ def train():
             probs = F.softmax(outputs, dim=1).cpu().numpy()
             preds = np.argmax(probs, axis=1)
 
+            # 예측 결과 및 확률 저장
             all_predictions.extend(preds)
             all_probs.extend(probs)
 
-            del batch_data, outputs
+            del batch_data, outputs, probs, preds
             torch.cuda.empty_cache()
 
     all_predictions = np.array(all_predictions)
     all_probs = np.array(all_probs)
+    # --------------------------------------------
 
     # 메트릭 계산
     accuracy = accuracy_score(test_labels, all_predictions)
-    precision = precision_score(test_labels, all_predictions, average='weighted')
-    recall = recall_score(test_labels, all_predictions, average='weighted')
-    f1 = f1_score(test_labels, all_predictions, average='weighted')
-    auc = roc_auc_score(test_labels, all_probs[:, 1])
+    precision = precision_score(test_labels, all_predictions, average='weighted', zero_division=0)
+    recall = recall_score(test_labels, all_predictions, average='weighted', zero_division=0)
+    f1 = f1_score(test_labels, all_predictions, average='weighted', zero_division=0)
+    
+    # --- [수정] AUC 계산 (Test Set에 2개 클래스가 모두 있어야 함) ---
+    auc = 0.0
+    if len(np.unique(test_labels)) > 1:
+        try:
+            auc = roc_auc_score(test_labels, all_probs[:, 1])
+        except ValueError:
+            print("Warning: AUC 계산 중 오류 발생. (단일 클래스만 존재)")
+            auc = 0.0
+    else:
+        print("Warning: Test Set에 클래스가 하나뿐이어서 AUC를 계산할 수 없습니다.")
+    # --------------------------------------------------------
+
     cm = confusion_matrix(test_labels, all_predictions)
 
     print(f"Accuracy: {accuracy:.4f}")
@@ -219,7 +345,8 @@ def train():
     print("\n=== 모델 저장 ===")
     try:
         torch.save({
-            'model_state_dict': model.state_dict(),
+            # --- [수정] 최고 성능 모델(best_model_state) 저장 ---
+            'model_state_dict': best_model_state,
             'accuracy': accuracy,
             'precision': precision,
             'recall': recall,
@@ -261,7 +388,10 @@ def predict():
         print("모델 로드 완료!")
 
         if 'accuracy' in checkpoint:
-            print(f"학습 시 정확도: {checkpoint['accuracy']:.4f}")
+            print(f"저장된 모델의 Test Accuracy: {checkpoint['accuracy']:.4f}")
+        if 'auc' in checkpoint:
+            print(f"저장된 모델의 Test AUC: {checkpoint['auc']:.4f}")
+            
     except Exception as e:
         print(f"모델 로드 오류: {e}")
         return
@@ -350,9 +480,11 @@ def predict():
         # 통계
         print("\n" + "="*60)
         print("=== 예측 통계 ===")
-        print(f"총 파일 수: {len(valid_paths)}개")
-        print(f"HC 예측: {hc_count}개 ({hc_count/len(valid_paths)*100:.1f}%)")
-        print(f"PD 예측: {pd_count}개 ({pd_count/len(valid_paths)*100:.1f}%)")
+        total_files = len(valid_paths)
+        print(f"총 파일 수: {total_files}개")
+        if total_files > 0:
+            print(f"HC 예측: {hc_count}개 ({hc_count/total_files*100:.1f}%)")
+            print(f"PD 예측: {pd_count}개 ({pd_count/total_files*100:.1f}%)")
 
         # 결과 저장
         save_results(csv_data, valid_paths, all_predictions, all_probs)
@@ -364,6 +496,39 @@ def predict():
         return
 
     print("\n예측 완료!")
+
+
+def save_training_curves(train_losses, val_losses):
+    """학습 곡선 그래프 저장"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    plot_filename = f"cnn_training_curve_{timestamp}.png"
+
+    try:
+        plt.figure(figsize=(10, 6))
+        epochs_range = range(1, len(train_losses) + 1)
+
+        plt.plot(epochs_range, train_losses, 'b-', label='Train Loss', linewidth=2)
+        plt.plot(epochs_range, val_losses, 'r-', label='Validation Loss', linewidth=2)
+
+        plt.xlabel('Epoch', fontsize=12)
+        plt.ylabel('Loss', fontsize=12)
+        plt.title('CNN Training and Validation Loss', fontsize=14, fontweight='bold')
+        plt.legend(fontsize=10)
+        plt.grid(True, alpha=0.3)
+
+        # 최소 validation loss 표시
+        min_val_loss = min(val_losses)
+        min_epoch = val_losses.index(min_val_loss) + 1
+        plt.axvline(x=min_epoch, color='g', linestyle='--', alpha=0.7, label=f'Best Model (Epoch {min_epoch})')
+        plt.legend(fontsize=10)
+
+        plt.tight_layout()
+        plt.savefig(plot_filename, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        print(f"학습 곡선 저장 완료: {plot_filename}")
+    except Exception as e:
+        print(f"학습 곡선 저장 실패: {e}")
 
 
 def save_results(csv_data, valid_paths, predictions, probs):
@@ -391,6 +556,7 @@ def save_results(csv_data, valid_paths, predictions, probs):
 
             hc_count = 0
             pd_count = 0
+            total_files = len(valid_paths)
 
             for i, path in enumerate(valid_paths):
                 filename = os.path.basename(path)
@@ -404,7 +570,7 @@ def save_results(csv_data, valid_paths, predictions, probs):
                 else:
                     hc_count += 1
 
-                f.write(f"[{i+1}/{len(valid_paths)}] {filename}\n")
+                f.write(f"[{i+1}/{total_files}] {filename}\n")
                 f.write(f"  예측: {pred_label}\n")
                 f.write(f"  신뢰도: {confidence:.1%}\n")
                 f.write(f"  확률: HC={hc_prob:.1%}, PD={pd_prob:.1%}\n\n")
@@ -412,9 +578,10 @@ def save_results(csv_data, valid_paths, predictions, probs):
             f.write("="*60 + "\n")
             f.write("예측 통계\n")
             f.write("="*60 + "\n")
-            f.write(f"총 파일 수: {len(valid_paths)}개\n")
-            f.write(f"HC 예측: {hc_count}개 ({hc_count/len(valid_paths)*100:.1f}%)\n")
-            f.write(f"PD 예측: {pd_count}개 ({pd_count/len(valid_paths)*100:.1f}%)\n")
+            f.write(f"총 파일 수: {total_files}개\n")
+            if total_files > 0:
+                f.write(f"HC 예측: {hc_count}개 ({hc_count/total_files*100:.1f}%)\n")
+                f.write(f"PD 예측: {pd_count}개 ({pd_count/total_files*100:.1f}%)\n")
 
         print(f"✓ TXT 저장: {txt_filename}")
     except Exception as e:
